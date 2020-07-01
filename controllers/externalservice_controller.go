@@ -97,10 +97,30 @@ func labels(es *egressv1.ExternalService) map[string]string {
 	}
 }
 
+func deploymentLabels(es *egressv1.ExternalService) map[string]string {
+	if es.Spec.DeploymentSpec != nil && es.Spec.DeploymentSpec.Labels != nil {
+		for k, v := range labels(es) {
+			es.Spec.DeploymentSpec.Labels[k] = v
+		}
+		return es.Spec.DeploymentSpec.Labels
+	}
+	return labels(es)
+}
+
 func annotations(es *egressv1.ExternalService) map[string]string {
 	return map[string]string{
 		"egress.monzo.com/dns-name": es.Spec.DnsName,
 	}
+}
+
+func deploymentAnnotations(es *egressv1.ExternalService) map[string]string {
+	if es.Spec.DeploymentSpec != nil && es.Spec.DeploymentSpec.Annotations != nil {
+		for k, v := range annotations(es) {
+			es.Spec.DeploymentSpec.Annotations[k] = v
+		}
+		return es.Spec.DeploymentSpec.Annotations
+	}
+	return annotations(es)
 }
 
 func labelsToSelect(es *egressv1.ExternalService) map[string]string {

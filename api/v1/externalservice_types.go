@@ -50,9 +50,33 @@ type ExternalServiceSpec struct {
 	// +optional
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 
+	//PodSpec is a description of a pod.
+	// +optional
+	PodSpec *v1.PodSpec `json:"podSpec,omitempty"`
+
+	//DeploymentSpec is a description of a deployment.
+	// +optional
+	DeploymentSpec *ExternalServiceDeploymentSpec `json:"deploymentSpec,omitempty"`
+
 	// If true, add a `egress.monzo.com/hijack-dns: true` label to produced Service objects
 	// CoreDNS can watch this label and decide to rewrite DnsName -> clusterIP
 	HijackDns bool `json:"hijackDns,omitempty"`
+}
+
+type ExternalServiceDeploymentSpec struct {
+	// Map of string keys and values that can be used to organize and categorize
+	// (scope and select) objects. May match selectors of replication controllers
+	// and services.
+	// More info: http://kubernetes.io/docs/user-guide/labels
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// Annotations is an unstructured key value map stored with a resource that may be
+	// set by external tools to store and retrieve arbitrary metadata. They are not
+	// queryable and should be preserved when modifying objects.
+	// More info: http://kubernetes.io/docs/user-guide/annotations
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 type ExternalServicePort struct {

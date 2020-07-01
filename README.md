@@ -56,10 +56,10 @@ spec:
   # optional, if not provided then defaults to 100m, 50Mi, 2, 1Gi
   resources:
     requests:
-      cpu: 1
+      cpu: "1"
       memory: 100Mi
     limits:
-      cpu: 2
+      cpu: "2"
       memory: 200Mi
 ```
 
