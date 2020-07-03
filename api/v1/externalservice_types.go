@@ -32,6 +32,7 @@ type ExternalServiceSpec struct {
 	DnsName string `json:"dnsName,omitempty"`
 
 	// Ports is a list of ports on which the external service may be called
+	// +optional
 	Ports []ExternalServicePort `json:"ports,omitempty"`
 
 	// MinReplicas is the minimum number of gateways to run. Defaults to 3
