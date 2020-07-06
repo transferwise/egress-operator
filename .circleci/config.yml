@@ -1,0 +1,42 @@
+version: 2
+
+docker_image: &docker_image
+  working_directory: /go/src/github.com/transferwise/egress-operator
+  docker:
+    - image: circleci/golang:1.13
+      environment:
+        GO111MODULE: "on"
+
+jobs:
+  build:
+    <<: *docker_image
+    steps:
+      - checkout
+      - run:
+          name: Dependencies
+          command: go mod download
+      - run:
+          name: Test
+          command: make test
+  release:
+    <<: *docker_image
+    steps:
+      - checkout
+      - run:
+          name: Dependencies
+          command: go mod download
+      - run:
+          name: Build cross binaries
+          command: make release
+      - run:
+          name: Publish Release
+          command: |
+            docker login --username "${DEPLOY_REGISTRY_USERNAME}" --password "${DEPLOY_REGISTRY_PASSWORD}" "docker.tw.ee"
+            make docker-push
+workflows:
+  version: 2
+  build_and_publish:
+    jobs:
+      - build
+      - release:
+          context: artifactory-deploy

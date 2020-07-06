@@ -1,5 +1,5 @@
 # Image URL to use all building/pushing image targets
-IMG ?= ${ACC}.dkr.ecr.eu-west-1.amazonaws.com/monzo/egress-operator:manager-$(shell git rev-parse --short head)
+IMG ?= docker.tw.ee/egress-operator:$(shell cat VERSION.txt)
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
@@ -14,26 +14,32 @@ all: manager
 
 # Run tests
 test: generate fmt vet manifests
+	@echo "+ $@"
 	go test ./... -coverprofile cover.out
 
 # Build manager binary
 manager: generate fmt vet
+	@echo "+ $@"
 	go build -o bin/manager main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests
+	@echo "+ $@"
 	go run ./main.go
 
 # Install CRDs into a cluster
 install: manifests
+	@echo "+ $@"
 	kustomize build config/crd | kubectl apply -f -
 
 # Uninstall CRDs from a cluster
 uninstall: manifests
+	@echo "+ $@"
 	kustomize build config/crd | kubectl delete -f -
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests
+	@echo "+ $@"
 	cd ./config/manager && kustomize edit set image controller=${IMG}
 	kustomize build config/default | kubectl apply -f -
 
@@ -43,22 +49,27 @@ manifests: controller-gen
 
 # Run go fmt against code
 fmt:
+	@echo "+ $@"
 	go fmt ./...
 
 # Run go vet against code
 vet:
+	@echo "+ $@"
 	go vet ./...
 
 # Generate code
 generate: controller-gen
+	@echo "+ $@"
 	$(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths="./..."
 
 # Build the docker image
 docker-build: test
+	@echo "+ $@"
 	docker build . -t ${IMG}
 
 # Push the docker image
 docker-push:
+	@echo "+ $@"
 	docker push ${IMG}
 
 # find or download controller-gen
