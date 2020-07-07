@@ -17,14 +17,16 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 
 	egressv1 "github.com/monzo/egress-operator/api/v1"
 	"github.com/monzo/egress-operator/controllers"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	// +kubebuilder:scaffold:imports
 )
@@ -44,11 +46,19 @@ func init() {
 }
 
 func main() {
-	var metricsAddr string
+	var metricsPort int
+	var metricsHost string
+	var healthPort int
+	var healthHost string
 	var enableLeaderElection bool
-	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
+	var leaderElectionNamespace string
+	flag.IntVar(&metricsPort, "metrics-port", 8383, "The port the metric endpoint binds to.")
+	flag.StringVar(&metricsHost, "metrics-host", "0.0.0.0", "The network interface the metric endpoint binds to.")
+	flag.IntVar(&healthPort, "health-port", 8080, "The port the health endpoint binds to.")
+	flag.StringVar(&healthHost, "health-host", "0.0.0.0", "The network interface to listen to.")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
+	flag.StringVar(&leaderElectionNamespace, "leader-election-namespace", namespace, "Leader election namespace.")
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(func(o *zap.Options) {
@@ -56,11 +66,12 @@ func main() {
 	}))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:             scheme,
-		MetricsBindAddress: metricsAddr,
-		LeaderElection:     enableLeaderElection,
-		Port:               9443,
-		Namespace:          namespace,
+		Scheme:                  scheme,
+		MetricsBindAddress:      fmt.Sprintf("%s:%d", metricsHost, metricsPort),
+		HealthProbeBindAddress:  fmt.Sprintf("%s:%d", healthHost, healthPort),
+		LeaderElection:          enableLeaderElection,
+		LeaderElectionNamespace: leaderElectionNamespace,
+		Namespace:               namespace,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -76,6 +87,16 @@ func main() {
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
+
+	if err = mgr.AddHealthzCheck("health", healthz.Ping); err != nil {
+		setupLog.Error(err, "Error starting health check service")
+		os.Exit(1)
+	}
+
+	if err = mgr.AddReadyzCheck("ready", healthz.Ping); err != nil {
+		setupLog.Error(err, "Error starting readiness check service")
+		os.Exit(1)
+	}
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
